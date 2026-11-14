@@ -1,0 +1,558 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Validation Web Application</title>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f2f5fa;
+            padding: 30px 15px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #183b70;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .form-section {
+            background: #f8faff;
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #dce5f2;
+        }
+
+        .form-section h2 {
+            margin-bottom: 18px;
+            color: #183b70;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 1px solid #cbd3df;
+            border-radius: 6px;
+            font-size: 15px;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .add-btn {
+            background: #2563eb;
+            color: white;
+            margin-top: 18px;
+            width: 100%;
+        }
+
+        .add-btn:hover {
+            background: #174bb5;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 25px 0;
+        }
+
+        .summary-card {
+            background: #edf4ff;
+            padding: 18px;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        .summary-card h3 {
+            color: #183b70;
+            font-size: 25px;
+            margin-bottom: 5px;
+        }
+
+        .summary-card p {
+            color: #555;
+            font-size: 13px;
+        }
+
+        .product-section {
+            margin-top: 25px;
+        }
+
+        .product-section h2 {
+            color: #183b70;
+            margin-bottom: 15px;
+        }
+
+        .search {
+            margin-bottom: 15px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        th, td {
+            padding: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #183b70;
+            color: white;
+        }
+
+        .valid {
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+            padding: 8px 12px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const { useState } = React;
+
+function App() {
+
+    const [productName, setProductName] = useState("");
+    const [price, setPrice] = useState("");
+    const [quantity, setQuantity] = useState("");
+    const [category, setCategory] = useState("");
+
+    const [products, setProducts] = useState([]);
+    const [search, setSearch] = useState("");
+
+    const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState("");
+
+    // Product Validation Function
+    const validateProduct = () => {
+
+        if (!productName.trim()) {
+            return "Product name is required.";
+        }
+
+        if (!price || Number(price) <= 0 || !Number.isFinite(Number(price))) {
+            return "Enter a valid price greater than zero.";
+        }
+
+        if (!quantity || !Number.isInteger(Number(quantity)) ||
+            Number(quantity) <= 0) {
+            return "Quantity must be a positive whole number.";
+        }
+
+        if (!category) {
+            return "Please select a product category.";
+        }
+
+        return "";
+    };
+
+    // Add Product Function
+    const addProduct = (e) => {
+
+        e.preventDefault();
+
+        const error = validateProduct();
+
+        if (error) {
+            setMessage(error);
+            setMessageType("error");
+            return;
+        }
+
+        const newProduct = {
+            id: Date.now(),
+            name: productName.trim(),
+            price: Number(price),
+            quantity: Number(quantity),
+            category: category
+        };
+
+        setProducts([...products, newProduct]);
+
+        setMessage("Product validated and added successfully!");
+        setMessageType("success");
+
+        setProductName("");
+        setPrice("");
+        setQuantity("");
+        setCategory("");
+    };
+
+    // Delete Product Function
+    const deleteProduct = (id) => {
+
+        setProducts(products.filter(
+            (product) => product.id !== id
+        ));
+
+        setMessage("Product deleted successfully!");
+        setMessageType("success");
+    };
+
+    // Search Product Function
+    const filteredProducts = products.filter((product) =>
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.category.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const totalProducts = products.length;
+
+    const totalQuantity = products.reduce(
+        (total, product) => total + product.quantity, 0
+    );
+
+    const totalValue = products.reduce(
+        (total, product) => total + product.price * product.quantity, 0
+    );
+
+    return (
+
+        <div className="container">
+
+            <h1>Product Validation System</h1>
+
+            <p className="subtitle">
+                Validate, manage and track your products
+            </p>
+
+            {/* Product Form */}
+
+            <div className="form-section">
+
+                <h2>Add New Product</h2>
+
+                <form onSubmit={addProduct}>
+
+                    <div className="form-grid">
+
+                        <div className="field">
+                            <label>Product Name</label>
+
+                            <input
+                                type="text"
+                                placeholder="Enter product name"
+                                value={productName}
+                                onChange={(e) =>
+                                    setProductName(e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="field">
+                            <label>Product Price (₹)</label>
+
+                            <input
+                                type="number"
+                                placeholder="Enter price"
+                                min="0"
+                                step="0.01"
+                                value={price}
+                                onChange={(e) =>
+                                    setPrice(e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="field">
+                            <label>Quantity</label>
+
+                            <input
+                                type="number"
+                                placeholder="Enter quantity"
+                                min="1"
+                                step="1"
+                                value={quantity}
+                                onChange={(e) =>
+                                    setQuantity(e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="field">
+                            <label>Category</label>
+
+                            <select
+                                value={category}
+                                onChange={(e) =>
+                                    setCategory(e.target.value)
+                                }
+                            >
+                                <option value="">
+                                    Select Category
+                                </option>
+
+                                <option value="Electronics">
+                                    Electronics
+                                </option>
+
+                                <option value="Clothing">
+                                    Clothing
+                                </option>
+
+                                <option value="Food">
+                                    Food
+                                </option>
+
+                                <option value="Furniture">
+                                    Furniture
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <button type="submit" className="add-btn">
+                        Validate & Add Product
+                    </button>
+
+                </form>
+
+                {message && (
+                    <div className={`message ${messageType}`}>
+                        {message}
+                    </div>
+                )}
+
+            </div>
+
+            {/* Summary Cards */}
+
+            <div className="summary">
+
+                <div className="summary-card">
+                    <h3>{totalProducts}</h3>
+                    <p>Total Products</p>
+                </div>
+
+                <div className="summary-card">
+                    <h3>{totalQuantity}</h3>
+                    <p>Total Quantity</p>
+                </div>
+
+                <div className="summary-card">
+                    <h3>
+                        ₹{totalValue.toFixed(2)}
+                    </h3>
+                    <p>Total Product Value</p>
+                </div>
+
+            </div>
+
+            {/* Product List */}
+
+            <div className="product-section">
+
+                <h2>Product Details</h2>
+
+                <input
+                    className="search"
+                    type="text"
+                    placeholder="Search by product name or category..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+
+                <div className="table-wrapper">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {filteredProducts.length > 0 ? (
+
+                                filteredProducts.map((product) => (
+
+                                    <tr key={product.id}>
+
+                                        <td>{product.name}</td>
+
+                                        <td>
+                                            ₹{product.price.toFixed(2)}
+                                        </td>
+
+                                        <td>{product.quantity}</td>
+
+                                        <td>{product.category}</td>
+
+                                        <td className="valid">
+                                            Valid
+                                        </td>
+
+                                        <td>
+                                            <button
+                                                className="delete-btn"
+                                                onClick={() =>
+                                                    deleteProduct(product.id)
+                                                }
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+
+                                    </tr>
+
+                                ))
+
+                            ) : (
+
+                                <tr>
+                                    <td colSpan="6" className="empty">
+                                        No products found.
+                                    </td>
+                                </tr>
+
+                            )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    );
+}
+
+const root = ReactDOM.createRoot(
+    document.getElementById("root")
+);
+
+root.render(<App />);
+
+</script>
+
+</body>
+</html>
